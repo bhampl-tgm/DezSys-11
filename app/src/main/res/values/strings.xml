@@ -12,5 +12,6 @@
     <string name="error_incorrect_password">This password is incorrect</string>
     <string name="error_field_required">This field is required</string>
     <string name="error_unknown">Something went wrong :(</string>
-    <string name="message_unknown_error">Unknown error: </string>
+    <string name="message_unknown_error">Unknown error :(\n Check your internet connection!</string>
+    <string name="message_check_internet">Check you internet connection</string>
 </resources>

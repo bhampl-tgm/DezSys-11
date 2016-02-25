@@ -14,7 +14,6 @@ import android.support.v7.app.AppCompatActivity;
 import android.text.Editable;
 import android.text.TextUtils;
 import android.text.TextWatcher;
-import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.AutoCompleteTextView;
@@ -36,7 +35,10 @@ import cz.msebera.android.httpclient.entity.StringEntity;
 
 
 /**
- * A login screen that offers login via email/password.
+ * A login screen that offers login via email/password and registration via email/name/password
+ *
+ * @author Burkhard Hampl [bhampl@student.tgm.ac.at]
+ * @version 1.0
  */
 public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<Cursor> {
 
@@ -59,7 +61,8 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
-        // Set up the login form.
+
+        // Set up the login and registration form
         mEmailView = (AutoCompleteTextView) findViewById(R.id.email);
         mPasswordView = (EditText) findViewById(R.id.password);
         mNameView = (EditText) findViewById(R.id.name);
@@ -84,9 +87,14 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
         mLoginFormView = findViewById(R.id.login_form);
         mProgressView = findViewById(R.id.login_progress);
 
+        // register button only enabled if name is given
         mNameView.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+            }
 
-            private void enableButtonOnText(CharSequence s) {
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
                 if (TextUtils.isEmpty(s)) {
                     mEmailRegisterButton.setEnabled(false);
                 } else {
@@ -95,18 +103,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
             }
 
             @Override
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
-                // enableButtonOnText(s);
-            }
-
-            @Override
-            public void onTextChanged(CharSequence s, int start, int before, int count) {
-                enableButtonOnText(s);
-            }
-
-            @Override
             public void afterTextChanged(Editable s) {
-                // enableButtonOnText(s);
             }
         });
 
@@ -114,7 +111,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
 
 
     /**
-     * Attempts to sign in or register the account specified by the login form.
+     * Attempts to sign in the account specified by the login form.
      * If there are form errors (invalid email, missing fields, etc.), the
      * errors are presented and no actual login attempt is made.
      */
@@ -123,18 +120,18 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
             return;
         }
 
-        // Reset errors.
+        // Reset errors
         mEmailView.setError(null);
         mPasswordView.setError(null);
 
-        // Store values at the time of the login attempt.
+        // Store values at the time of the login attempt
         String email = mEmailView.getText().toString();
         String password = mPasswordView.getText().toString();
 
         boolean cancel = false;
         View focusView = null;
 
-        // Check for a valid password, if the user entered one.
+        // Check for a valid password, if the user entered one
         if (TextUtils.isEmpty(password)) {
             mEmailView.setError(getString(R.string.error_field_required));
             focusView = mPasswordView;
@@ -145,7 +142,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
             cancel = true;
         }
 
-        // Check for a valid email address.
+        // Check for a valid email address, if the user entered one
         if (TextUtils.isEmpty(email)) {
             mEmailView.setError(getString(R.string.error_field_required));
             focusView = mEmailView;
@@ -158,28 +155,33 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
 
         if (cancel) {
             // There was an error; don't attempt login and focus the first
-            // form field with an error.
+            // form field with an error
             focusView.requestFocus();
         } else {
             // Show a progress spinner, and kick off a background task to
-            // perform the user login attempt.
+            // perform the user login attempt
             showProgress(true);
             mAuthTask = new UserLoginTask(email, password);
             mAuthTask.execute((Void) null);
         }
     }
 
+    /**
+     * Attempts to register the account specified by the login form.
+     * If there are form errors (invalid email, missing fields, etc.), the
+     * errors are presented and no actual registration attempt is made.
+     */
     private void attemptRegister() {
         if (mRegTask != null) {
             return;
         }
 
-        // Reset errors.
+        // Reset errors
         mEmailView.setError(null);
         mNameView.setError(null);
         mPasswordView.setError(null);
 
-        // Store values at the time of the login attempt.
+        // Store values at the time of the registration attempt
         String email = mEmailView.getText().toString();
         String name = mNameView.getText().toString();
         String password = mPasswordView.getText().toString();
@@ -187,7 +189,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
         boolean cancel = false;
         View focusView = null;
 
-        // Check for a valid password, if the user entered one.
+        // Check for a valid password, if the user entered one
         if (TextUtils.isEmpty(password)) {
             mEmailView.setError(getString(R.string.error_field_required));
             focusView = mPasswordView;
@@ -198,15 +200,14 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
             cancel = true;
         }
 
-        // Check for a valid password, if the user entered one.
+        // Check the user entered a name
         if (TextUtils.isEmpty(name)) {
             mNameView.setError(getString(R.string.error_field_required));
             focusView = mNameView;
             cancel = true;
         }
 
-        Log.d("attemptRegister(): ", email);
-        // Check for a valid email address.
+        // Check for a valid email address, if the user entered one
         if (TextUtils.isEmpty(email)) {
             mEmailView.setError(getString(R.string.error_field_required));
             focusView = mEmailView;
@@ -218,36 +219,49 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
         }
 
         if (cancel) {
-            // There was an error; don't attempt login and focus the first
-            // form field with an error.
+            // There was an error; don't attempt register and focus the first
+            // form field with an error
             focusView.requestFocus();
         } else {
             // Show a progress spinner, and kick off a background task to
-            // perform the user login attempt.
+            // perform the user registration attempt
             showProgress(true);
             mRegTask = new UserRegistrationTask(email, name, password);
             mRegTask.execute((Void) null);
         }
     }
 
+    /**
+     * Checks if the given email address is valid
+     *
+     * @param email the given email to check
+     * @return if the email contains valid
+     * @see android.util.Patterns
+     */
     private boolean isEmailValid(String email) {
-        //TODO: Replace this with your own logic
-        return email.contains("@");
-    }
-
-    private boolean isPasswordValid(String password) {
-        //TODO: Replace this with your own logic
-        return password.length() > 4;
+        return !TextUtils.isEmpty(email) && android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches();
     }
 
     /**
-     * Shows the progress UI and hides the login form.
+     * Checks if the given password is valid
+     *
+     * @param password the given password to check
+     * @return if the password is valid
+     */
+    private boolean isPasswordValid(String password) {
+        return !TextUtils.isEmpty(password) && password.length() > 5;
+    }
+
+    /**
+     * Shows the progress UI and hides the login form
+     *
+     * @param show if the progress UI should be shown
      */
     @TargetApi(Build.VERSION_CODES.HONEYCOMB_MR2)
     private void showProgress(final boolean show) {
         // On Honeycomb MR2 we have the ViewPropertyAnimator APIs, which allow
         // for very easy animations. If available, use these APIs to fade-in
-        // the progress spinner.
+        // the progress spinner
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB_MR2) {
             int shortAnimTime = getResources().getInteger(android.R.integer.config_shortAnimTime);
 
@@ -292,8 +306,11 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
     }
 
     /**
-     * Represents an asynchronous login/registration task used to authenticate
-     * the user.
+     * Represents an asynchronous login task used to authenticate
+     * the user
+     *
+     * @author Burkhard Hampl [bhampl@student.tgm.ac.at]
+     * @version 1.0
      */
     public class UserLoginTask extends AsyncTask<Void, Void, Boolean> {
 
@@ -302,10 +319,17 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
         private String message;
         private boolean fail;
 
+        /**
+         * The default constructor
+         *
+         * @param email    the email
+         * @param password the password
+         */
         UserLoginTask(String email, String password) {
             mEmail = email;
             mPassword = password;
             fail = false;
+            message = getString(R.string.message_unknown_error);
         }
 
         @Override
@@ -324,13 +348,11 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
                 e.printStackTrace();
                 return false;
             }
-
-            client.post(getBaseContext(), "http://dezsys-09.herokuapp.com/login", entity, RequestParams.APPLICATION_JSON, new JsonHttpResponseHandler(){
+            client.post(getBaseContext(), "http://dezsys-09.herokuapp.com/login", entity, RequestParams.APPLICATION_JSON, new JsonHttpResponseHandler() {
                 @Override
                 public void onSuccess(int statusCode, Header[] headers, JSONObject response) {
                     try {
                         // If the response is JSONObject
-                        Log.d("HTTP POST", "SUCCESS!!");
                         if (statusCode != 200) fail = true;
                         message = response.getString("message");
                     } catch (JSONException e) {
@@ -341,20 +363,18 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
                 @Override
                 public void onFailure(int statusCode, Header[] headers, Throwable throwable, JSONObject errorResponse) {
                     try {
-                        Log.d("HTTP POST", "FAILURE!! ", throwable);
+                        // If something went wrong
                         fail = true;
                         if (errorResponse != null) {
                             message = errorResponse.getString("message");
                         } else {
-                            message = "" + R.string.message_unknown_error + statusCode;
+                            message = getString(R.string.message_unknown_error);
                         }
                     } catch (JSONException e) {
                         e.printStackTrace();
                     }
                 }
             });
-
-            // TODO: register the new account here.
             return true;
         }
 
@@ -367,7 +387,6 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
                 mTextView.setTextColor(Color.BLACK);
             } else {
                 mTextView.setTextColor(Color.RED);
-
             }
             mTextView.setText(message);
 
@@ -380,6 +399,13 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
         }
     }
 
+    /**
+     * Represents an asynchronous registration task used to authenticate
+     * the user
+     *
+     * @author Burkhard Hampl [bhampl@student.tgm.ac.at]
+     * @version 1.0
+     */
     public class UserRegistrationTask extends AsyncTask<Void, Void, Boolean> {
 
         private final String mEmail;
@@ -388,11 +414,19 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
         private String message;
         private boolean fail;
 
+        /**
+         * The default constructor
+         *
+         * @param email    the email
+         * @param name     the name
+         * @param password the password
+         */
         UserRegistrationTask(String email, String name, String password) {
             mEmail = email;
             mName = name;
             mPassword = password;
             fail = false;
+            message = getString(R.string.message_unknown_error);
         }
 
         @Override
@@ -412,13 +446,11 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
                 e.printStackTrace();
                 return false;
             }
-
-            client.post(getBaseContext(), "http://dezsys-09.herokuapp.com/register", entity, RequestParams.APPLICATION_JSON, new JsonHttpResponseHandler(){
+            client.post(getBaseContext(), "http://dezsys-09.herokuapp.com/register", entity, RequestParams.APPLICATION_JSON, new JsonHttpResponseHandler() {
                 @Override
                 public void onSuccess(int statusCode, Header[] headers, JSONObject response) {
                     try {
                         // If the response is JSONObject
-                        Log.d("HTTP POST", "SUCCESS!!");
                         if (statusCode != 201) fail = true;
                         message = response.getString("message");
                     } catch (JSONException e) {
@@ -429,19 +461,18 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
                 @Override
                 public void onFailure(int statusCode, Header[] headers, Throwable throwable, JSONObject errorResponse) {
                     try {
-                        Log.d("HTTP POST", "FAILURE!! ", throwable);
+                        // If something went wrong
                         fail = true;
                         if (errorResponse != null) {
                             message = errorResponse.getString("message");
                         } else {
-                            message = "" + R.string.message_unknown_error + statusCode;
+                            message = getString(R.string.message_unknown_error);
                         }
                     } catch (JSONException e) {
                         e.printStackTrace();
                     }
                 }
             });
-
             return true;
         }
 
